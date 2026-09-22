@@ -44,7 +44,7 @@ Permite administrar:
 
 ### Paso 1: Abrir la terminal en la raíz del proyecto
 ```powershell
-cd "C:\Users\aggus\OneDrive\Desktop\Sistemas Distribuidos\tp-distribuidos"
+cd "C:Sistemas Distribuidos\tp-distribuidos"
 ```
 
 ### Paso 2: Verificar que el puerto 8080 esté libre
