@@ -1,10 +1,11 @@
-package com.unla.tp_destribuidos.dto;
+package com.unla.tp_distribuidos.dto;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
-public class ReservaDto {
-	@NotNull(message = "El ID de cliente es obligatorio")
+public class ReservaDTO {
+
+    @NotNull(message = "El ID de cliente es obligatorio")
     private Long clienteId;
 
     @NotNull(message = "El ID de vehículo es obligatorio")
@@ -28,5 +29,4 @@ public class ReservaDto {
 
     public LocalDateTime getFechaHoraFin() { return fechaHoraFin; }
     public void setFechaHoraFin(LocalDateTime fechaHoraFin) { this.fechaHoraFin = fechaHoraFin; }
-
 }

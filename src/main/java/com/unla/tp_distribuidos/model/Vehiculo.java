@@ -1,13 +1,23 @@
-package com.unla.tp_destribuidos.model;
+package com.unla.tp_distribuidos.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-
+/**
+ * Clase que representa un vehículo del sistema de alquiler.
+ *
+ * Cada vehículo tiene su identificación, características físicas,
+ * tipo de transporte, estado operativo y precio diario de alquiler.
+ * También se controla si el vehículo está disponible para ser usado o no.
+ */
 @Entity
 @Table(name = "vehiculos")
 public class Vehiculo {
-	@Id
+
+    /**
+     * Identificador único del vehículo en la base de datos.
+     */
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

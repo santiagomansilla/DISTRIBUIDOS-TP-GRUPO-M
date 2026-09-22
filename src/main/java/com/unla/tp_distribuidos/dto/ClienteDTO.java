@@ -1,12 +1,13 @@
-package com.unla.tp_destribuidos.dto;
+package com.unla.tp_distribuidos.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
-public class ClienteDto {
-	@NotNull(message = "El documento es obligatorio")
+public class ClienteDTO {
+
+    @NotNull(message = "El documento es obligatorio")
     private Long documento;
 
     @NotBlank(message = "El nombre es obligatorio")
