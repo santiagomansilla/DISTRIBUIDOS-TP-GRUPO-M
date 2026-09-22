@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc";
+option java_outer_classname = "ReservaProto";
+
+service ReservaGrpcService {
+    rpc CrearReserva(CrearReservaRequest) returns (ReservaResponse);
+    rpc CancelarReserva(CancelarReservaRequest) returns (ReservaResponse);
+    rpc ConsultarHistorial(ConsultarHistorialRequest) returns (ConsultarHistorialResponse);
+    rpc ConsultarReservas(ConsultarReservasRequest) returns (ConsultarReservasResponse);
+}
+
+message ReservaResponse {
+    int64 id = 1;
+    int64 clienteId = 2;
+    string clienteNombreCompleto = 3;
+    int64 vehiculoId = 4;
+    string vehiculoPatente = 5;
+    string vehiculoDescripcion = 6;
+    string fechaHoraInicio = 7;
+    string fechaHoraFin = 8;
+    double precioDiario = 9;
+    double importeTotal = 10;
+    string estado = 11;
+    int64 cantidadDias = 12;
+}
+
+message CrearReservaRequest {
+    int64 clienteId = 1;
+    int64 vehiculoId = 2;
+    string fechaHoraInicio = 3;
+    string fechaHoraFin = 4;
+}
+
+message CancelarReservaRequest {
+    int64 id = 1;
+}
+
+message ConsultarHistorialRequest {
+    int64 clienteId = 1;
+}
+
+message ConsultarHistorialResponse {
+    repeated ReservaResponse reservas = 1;
+}
+
+message ConsultarReservasRequest {
+    int64 clienteId = 1; // Opcional, 0 si no se filtra
+    int64 vehiculoId = 2; // Opcional, 0 si no se filtra
+    string tipoVehiculo = 3; // Opcional
+    string estado = 4; // Opcional
+    string fechaDesde = 5; // Opcional
+    string fechaHasta = 6; // Opcional
+    bool esAdmin = 7;
+}
+
+message ConsultarReservasResponse {
+    repeated ReservaResponse reservas = 1;
+}

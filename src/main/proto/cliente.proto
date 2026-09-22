@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc";
+option java_outer_classname = "ClienteProto";
+
+service ClienteGrpcService {
+    rpc CrearCliente(CrearClienteRequest) returns (ClienteResponse);
+    rpc ModificarCliente(ModificarClienteRequest) returns (ClienteResponse);
+    rpc BajaLogicaCliente(BajaLogicaClienteRequest) returns (BajaLogicaClienteResponse);
+    rpc ObtenerClientePorId(ObtenerClientePorIdRequest) returns (ClienteResponse);
+    rpc ListarClientes(ListarClientesRequest) returns (ListarClientesResponse);
+}
+
+message ClienteResponse {
+    int64 id = 1;
+    int64 documento = 2;
+    string nombre = 3;
+    string apellido = 4;
+    string email = 5;
+    string telefono = 6;
+    string fechaNacimiento = 7;
+    bool activo = 8;
+}
+
+message CrearClienteRequest {
+    int64 documento = 1;
+    string nombre = 2;
+    string apellido = 3;
+    string email = 4;
+    string telefono = 5;
+    string fechaNacimiento = 6;
+}
+
+message ModificarClienteRequest {
+    int64 id = 1;
+    string nombre = 2;
+    string apellido = 3;
+    string telefono = 4;
+    string fechaNacimiento = 5;
+}
+
+message BajaLogicaClienteRequest {
+    int64 id = 1;
+}
+
+message BajaLogicaClienteResponse {
+    bool exito = 1;
+    string mensaje = 2;
+}
+
+message ObtenerClientePorIdRequest {
+    int64 id = 1;
+}
+
+message ListarClientesRequest {
+}
+
+message ListarClientesResponse {
+    repeated ClienteResponse clientes = 1;
+}

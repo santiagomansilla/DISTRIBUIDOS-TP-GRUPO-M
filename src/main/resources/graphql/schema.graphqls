@@ -1,0 +1,90 @@
+"""
+Representa un vehículo disponible en el catálogo de Rentar.
+"""
+type Vehiculo {
+    id: ID!
+    patente: String!
+    marca: String!
+    modelo: String!
+    anio: Int!
+    color: String
+    tipo: String!
+    precioDiario: Float!
+    estado: String!
+    activo: Boolean!
+}
+
+"""
+Representa un cliente registrado en la plataforma Rentar.
+"""
+type Cliente {
+    id: ID!
+    documento: ID!
+    nombre: String!
+    apellido: String!
+    email: String!
+    telefono: String
+    fechaNacimiento: String
+    activo: Boolean!
+}
+
+"""
+Representa una reserva de alquiler de vehículo realizada por un cliente.
+"""
+type Reserva {
+    id: ID!
+    cliente: Cliente
+    vehiculo: Vehiculo
+    fechaHoraInicio: String!
+    fechaHoraFin: String!
+    precioDiario: Float!
+    importeTotal: Float!
+    estado: String!
+    cantidadDias: Int!
+}
+
+"""
+Filtros disponibles para la consulta de disponibilidad de vehículos.
+Las fechas son obligatorias según requerimientos de la cátedra.
+"""
+input DisponibilidadFilter {
+    fechaHoraInicio: String!
+    fechaHoraFin: String!
+    tipo: String
+    marca: String
+    modelo: String
+    precioMin: Float
+    precioMax: Float
+}
+
+"""
+Filtros para la consulta de reservas (Cliente y Administrador).
+"""
+input ConsultaReservasFilter {
+    clienteId: ID
+    vehiculoId: ID
+    tipoVehiculo: String
+    estado: String
+    fechaDesde: String
+    fechaHasta: String
+    esAdmin: Boolean
+}
+
+type Query {
+    """
+    Requerimiento 2: [CLIENTE] Consulta de vehículos disponibles para alquiler en un rango de fechas obligatorias.
+    Filtros opcionales: tipo, marca, modelo, rango de precio diario.
+    """
+    consultarDisponibilidad(filtro: DisponibilidadFilter!): [Vehiculo]!
+
+    """
+    Requerimiento 5: [CLIENTE - ADMINISTRADOR] Consulta de reservas registradas.
+    Clientes sólo consultan las propias. Administrador puede consultar todas.
+    """
+    consultarReservas(filtro: ConsultaReservasFilter): [Reserva]!
+
+    """
+    Requerimiento 7: [CLIENTE] Consulta el historial de alquileres realizados (finalizados y cancelados).
+    """
+    historialAlquileres(clienteId: ID!): [Reserva]!
+}

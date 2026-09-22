@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rentar - Sistema de Alquiler de Vehículos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .hero { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: none; margin-bottom: 1.5rem; }
+        .badge-rpc { background-color: #6f42c1; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h2 mb-1">🚗 Rentar - Plataforma de Alquiler</h1>
+                <p class="mb-0 text-white-50">UNLa - Desarrollo de Software en Sistemas Distribuidos</p>
+            </div>
+            <div>
+                <a href="/swagger-ui/index.html" target="_blank" class="btn btn-outline-light btn-sm me-2">📖 Swagger REST</a>
+                <a href="/graphiql" target="_blank" class="btn btn-outline-light btn-sm me-2">🔮 GraphiQL</a>
+                <span class="badge badge-rpc p-2">⚡ gRPC Activo: Puerto 9090</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <ul class="nav nav-pills mb-4" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-disponibilidad-btn" data-bs-toggle="pill" data-bs-target="#tab-disponibilidad" type="button">🔍 Consulta Disponibilidad (GraphQL)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-reserva-btn" data-bs-toggle="pill" data-bs-target="#tab-reserva" type="button">📝 Nueva Reserva (REST / gRPC)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-historial-btn" data-bs-toggle="pill" data-bs-target="#tab-historial" type="button">📜 Historial / Cancelación</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-admin-btn" data-bs-toggle="pill" data-bs-target="#tab-admin" type="button">⚙️ Panel Admin (ABM)</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        <!-- 1. CONSULTA DE DISPONIBILIDAD (GRAPHQL) -->
+        <div class="tab-pane fade show active" id="tab-disponibilidad" role="tabpanel">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Consultar Vehículos Disponibles (Requerimiento 2 - GraphQL)</h4>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha y Hora Inicio *</label>
+                        <input type="datetime-local" class="form-control" id="disp-inicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha y Hora Fin *</label>
+                        <input type="datetime-local" class="form-control" id="disp-fin">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" id="disp-tipo">
+                            <option value="">Todos</option>
+                            <option value="SEDAN">SEDAN</option>
+                            <option value="SUV">SUV</option>
+                            <option value="PICKUP">PICKUP</option>
+                            <option value="COUPE">COUPE</option>
+                            <option value="HATCHBACK">HATCHBACK</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Marca</label>
+                        <input type="text" class="form-control" id="disp-marca" placeholder="Ej: Toyota">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" class="form-control" id="disp-modelo" placeholder="Ej: Corolla">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary" onclick="consultarDisponibilidad()">Buscar Disponibles</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <h5>Vehículos Encontrados</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patente</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Año</th>
+                                <th>Color</th>
+                                <th>Tipo</th>
+                                <th>Precio Diario</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-disponibles">
+                            <tr><td colspan="9" class="text-center text-muted">Ingrese fechas y presione 'Buscar Disponibles'.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ALTA DE RESERVA (REST / gRPC) -->
+        <div class="tab-pane fade" id="tab-reserva" role="tabpanel">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Crear Nueva Reserva (Requerimiento 4 - REST / gRPC)</h4>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">ID de Cliente *</label>
+                        <input type="number" class="form-control" id="res-cliente-id" placeholder="Ej: 1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">ID de Vehículo *</label>
+                        <input type="number" class="form-control" id="res-vehiculo-id" placeholder="Ej: 1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha y Hora Inicio *</label>
+                        <input type="datetime-local" class="form-control" id="res-inicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha y Hora Fin *</label>
+                        <input type="datetime-local" class="form-control" id="res-fin">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-success" onclick="crearReserva()">Confirmar Reserva (REST)</button>
+                    </div>
+                </div>
+                <div id="res-resultado" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- 3. HISTORIAL Y CANCELACIÓN -->
+        <div class="tab-pane fade" id="tab-historial" role="tabpanel">
+            <div class="card p-4">
+                <h4 class="card-title mb-3">Historial de Alquileres (Requerimiento 7 - GraphQL)</h4>
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">ID del Cliente *</label>
+                        <input type="number" class="form-control" id="hist-cliente-id" placeholder="Ingrese ID de Cliente">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" onclick="consultarHistorial()">Consultar Historial</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID Reserva</th>
+                                <th>Vehículo</th>
+                                <th>Patente</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Días</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-historial">
+                            <tr><td colspan="8" class="text-center text-muted">Ingrese un ID de cliente para ver su historial.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <hr class="my-4">
+                <h5 class="mb-3">Cancelar Reserva (Requerimiento 6 - REST)</h5>
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">ID Reserva a Cancelar</label>
+                        <input type="number" class="form-control" id="cancelar-reserva-id" placeholder="ID de Reserva">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-danger w-100" onclick="cancelarReserva()">Cancelar Reserva</button>
+                    </div>
+                </div>
+                <div id="cancelar-resultado" class="mt-2"></div>
+            </div>
+        </div>
+
+        <!-- 4. PANEL ADMIN (ABM) -->
+        <div class="tab-pane fade" id="tab-admin" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card p-4">
+                        <h5>ABM Vehículos (REST)</h5>
+                        <form id="form-vehiculo" onsubmit="guardarVehiculo(event)">
+                            <div class="mb-2"><label class="form-label">Patente</label><input type="text" class="form-control form-control-sm" id="v-patente" required></div>
+                            <div class="row">
+                                <div class="col"><label class="form-label">Marca</label><input type="text" class="form-control form-control-sm" id="v-marca" required></div>
+                                <div class="col"><label class="form-label">Modelo</label><input type="text" class="form-control form-control-sm" id="v-modelo" required></div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col"><label class="form-label">Año</label><input type="number" class="form-control form-control-sm" id="v-anio" required></div>
+                                <div class="col"><label class="form-label">Color</label><input type="text" class="form-control form-control-sm" id="v-color" required></div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select form-select-sm" id="v-tipo" required>
+                                        <option value="SEDAN">SEDAN</option><option value="SUV">SUV</option><option value="PICKUP">PICKUP</option><option value="COUPE">COUPE</option><option value="HATCHBACK">HATCHBACK</option>
+                                    </select>
+                                </div>
+                                <div class="col"><label class="form-label">Precio Diario</label><input type="number" step="0.01" class="form-control form-control-sm" id="v-precio" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm mt-3">Crear Vehículo</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card p-4">
+                        <h5>ABM Clientes (REST)</h5>
+                        <form id="form-cliente" onsubmit="guardarCliente(event)">
+                            <div class="mb-2"><label class="form-label">Documento</label><input type="number" class="form-control form-control-sm" id="c-doc" required></div>
+                            <div class="row">
+                                <div class="col"><label class="form-label">Nombre</label><input type="text" class="form-control form-control-sm" id="c-nombre" required></div>
+                                <div class="col"><label class="form-label">Apellido</label><input type="text" class="form-control form-control-sm" id="c-apellido" required></div>
+                            </div>
+                            <div class="mb-2 mt-2"><label class="form-label">Email</label><input type="email" class="form-control form-control-sm" id="c-email" required></div>
+                            <div class="row">
+                                <div class="col"><label class="form-label">Teléfono</label><input type="text" class="form-control form-control-sm" id="c-tel"></div>
+                                <div class="col"><label class="form-label">Fecha Nacimiento</label><input type="date" class="form-control form-control-sm" id="c-fecha"></div>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm mt-3">Crear Cliente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    async function consultarDisponibilidad() {
+        const inicio = document.getElementById('disp-inicio').value;
+        const fin = document.getElementById('disp-fin').value;
+        if (!inicio || !fin) {
+            alert('Las fechas y horas de inicio y fin son obligatorias.');
+            return;
+        }
+
+        const tipo = document.getElementById('disp-tipo').value;
+        const marca = document.getElementById('disp-marca').value;
+        const modelo = document.getElementById('disp-modelo').value;
+
+        const query = `
+            query ($filtro: DisponibilidadFilter!) {
+                consultarDisponibilidad(filtro: $filtro) {
+                    id
+                    patente
+                    marca
+                    modelo
+                    anio
+                    color
+                    tipo
+                    precioDiario
+                }
+            }
+        `;
+
+        const variables = {
+            filtro: {
+                fechaHoraInicio: inicio + ":00",
+                fechaHoraFin: fin + ":00",
+                tipo: tipo || null,
+                marca: marca || null,
+                modelo: modelo || null
+            }
+        };
+
+        try {
+            const resp = await fetch('/graphql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, variables })
+            });
+            const data = await resp.json();
+            const tbody = document.getElementById('tabla-disponibles');
+            tbody.innerHTML = '';
+
+            if (data.errors) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-danger">${data.errors[0].message}</td></tr>`;
+                return;
+            }
+
+            const lista = data.data.consultarDisponibilidad;
+            if (!lista || lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center">No hay vehículos disponibles para ese período.</td></tr>`;
+                return;
+            }
+
+            lista.forEach(v => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${v.id}</td>
+                        <td><strong>${v.patente}</strong></td>
+                        <td>${v.marca}</td>
+                        <td>${v.modelo}</td>
+                        <td>${v.anio}</td>
+                        <td>${v.color || '-'}</td>
+                        <td><span class="badge bg-secondary">${v.tipo}</span></td>
+                        <td>$${v.precioDiario}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="seleccionarParaReserva(${v.id})">Seleccionar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            alert('Error al consultar GraphQL: ' + err.message);
+        }
+    }
+
+    function seleccionarParaReserva(id) {
+        document.getElementById('res-vehiculo-id').value = id;
+        document.getElementById('res-inicio').value = document.getElementById('disp-inicio').value;
+        document.getElementById('res-fin').value = document.getElementById('disp-fin').value;
+        const triggerEl = document.querySelector('#tab-reserva-btn');
+        bootstrap.Tab.getInstance(triggerEl) ? bootstrap.Tab.getInstance(triggerEl).show() : new bootstrap.Tab(triggerEl).show();
+    }
+
+    async function crearReserva() {
+        const clienteId = document.getElementById('res-cliente-id').value;
+        const vehiculoId = document.getElementById('res-vehiculo-id').value;
+        const inicio = document.getElementById('res-inicio').value;
+        const fin = document.getElementById('res-fin').value;
+
+        if (!clienteId || !vehiculoId || !inicio || !fin) {
+            alert('Todos los campos son obligatorios');
+            return;
+        }
+
+        const payload = {
+            clienteId: parseInt(clienteId),
+            vehiculoId: parseInt(vehiculoId),
+            fechaHoraInicio: inicio + ":00",
+            fechaHoraFin: fin + ":00"
+        };
+
+        const out = document.getElementById('res-resultado');
+        out.innerHTML = '';
+
+        try {
+            const resp = await fetch('/api/v1/reservas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (resp.ok) {
+                const res = await resp.json();
+                out.innerHTML = `<div class="alert alert-success">¡Reserva #${res.id} creada con éxito! Total: $${res.importeTotal} - Estado: ${res.estado}</div>`;
+            } else {
+                const err = await resp.text();
+                out.innerHTML = `<div class="alert alert-danger">Error: ${err}</div>`;
+            }
+        } catch (e) {
+            out.innerHTML = `<div class="alert alert-danger">Error: ${e.message}</div>`;
+        }
+    }
+
+    async function consultarHistorial() {
+        const clienteId = document.getElementById('hist-cliente-id').value;
+        if (!clienteId) {
+            alert('Ingrese el ID del cliente');
+            return;
+        }
+
+        const query = `
+            query ($clienteId: ID!) {
+                historialAlquileres(clienteId: $clienteId) {
+                    id
+                    vehiculo {
+                        marca
+                        modelo
+                        patente
+                    }
+                    fechaHoraInicio
+                    fechaHoraFin
+                    cantidadDias
+                    importeTotal
+                    estado
+                }
+            }
+        `;
+
+        try {
+            const resp = await fetch('/graphql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, variables: { clienteId } })
+            });
+            const data = await resp.json();
+            const tbody = document.getElementById('tabla-historial');
+            tbody.innerHTML = '';
+
+            const list = data.data?.historialAlquileres;
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center">No hay registros de alquileres o cancelaciones para este cliente.</td></tr>`;
+                return;
+            }
+
+            list.forEach(r => {
+                const badge = r.estado === 'CANCELADA' ? 'bg-danger' : 'bg-success';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${r.id}</td>
+                        <td>${r.vehiculo ? r.vehiculo.marca + ' ' + r.vehiculo.modelo : '-'}</td>
+                        <td>${r.vehiculo ? r.vehiculo.patente : '-'}</td>
+                        <td>${r.fechaHoraInicio}</td>
+                        <td>${r.fechaHoraFin}</td>
+                        <td>${r.cantidadDias}</td>
+                        <td>$${r.importeTotal}</td>
+                        <td><span class="badge ${badge}">${r.estado}</span></td>
+                    </tr>
+                `;
+            });
+        } catch (e) {
+            alert('Error al consultar historial: ' + e.message);
+        }
+    }
+
+    async function cancelarReserva() {
+        const id = document.getElementById('cancelar-reserva-id').value;
+        if (!id) {
+            alert('Ingrese el ID de reserva');
+            return;
+        }
+
+        const out = document.getElementById('cancelar-resultado');
+        try {
+            const resp = await fetch(`/api/v1/reservas/${id}/cancelar`, { method: 'POST' });
+            if (resp.ok) {
+                const res = await resp.json();
+                out.innerHTML = `<div class="alert alert-warning">Reserva #${res.id} actualizada a estado: ${res.estado}</div>`;
+            } else {
+                const err = await resp.text();
+                out.innerHTML = `<div class="alert alert-danger">Error: ${err}</div>`;
+            }
+        } catch (e) {
+            out.innerHTML = `<div class="alert alert-danger">Error: ${e.message}</div>`;
+        }
+    }
+
+    async function guardarVehiculo(e) {
+        e.preventDefault();
+        const payload = {
+            patente: document.getElementById('v-patente').value,
+            marca: document.getElementById('v-marca').value,
+            modelo: document.getElementById('v-modelo').value,
+            anio: parseInt(document.getElementById('v-anio').value),
+            color: document.getElementById('v-color').value,
+            tipo: document.getElementById('v-tipo').value,
+            precioDiario: parseFloat(document.getElementById('v-precio').value),
+            estado: 'DISPONIBLE'
+        };
+
+        const resp = await fetch('/api/v1/vehiculos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (resp.ok) {
+            alert('Vehículo creado correctamente');
+            document.getElementById('form-vehiculo').reset();
+        } else {
+            alert('Error al crear vehículo: ' + await resp.text());
+        }
+    }
+
+    async function guardarCliente(e) {
+        e.preventDefault();
+        const payload = {
+            documento: parseInt(document.getElementById('c-doc').value),
+            nombre: document.getElementById('c-nombre').value,
+            apellido: document.getElementById('c-apellido').value,
+            email: document.getElementById('c-email').value,
+            telefono: document.getElementById('c-tel').value,
+            fechaNacimiento: document.getElementById('c-fecha').value || null
+        };
+
+        const resp = await fetch('/api/v1/clientes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (resp.ok) {
+            alert('Cliente creado correctamente');
+            document.getElementById('form-cliente').reset();
+        } else {
+            alert('Error al crear cliente: ' + await resp.text());
+        }
+    }
+</script>
+
+</body>
+</html>
