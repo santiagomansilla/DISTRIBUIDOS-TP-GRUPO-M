@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc.cliente;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc.cliente";
+
+
+service ClienteGrpcService {
+
+  // Consultar clientes (listado completo).
+  rpc ObtenerClientes (ObtenerClientesRequest) returns (ClientesResponse);
+
+  // Consultar un cliente específico.
+  rpc ObtenerClientePorId (ClienteIdRequest) returns (ClienteResponse);
+
+  // Verificar la existencia de un cliente (ej: antes de crear una reserva).
+  rpc ExisteCliente (ClienteIdRequest) returns (ExisteResponse);
+
+  // Verificar que un cliente se encuentre activo.
+  rpc ClienteActivo (ClienteIdRequest) returns (ActivoResponse);
+}
+
+message ObtenerClientesRequest {
+  // Sin filtros por ahora.
+}
+
+message ClienteIdRequest {
+  int64 id = 1;
+}
+
+message ClienteResponse {
+  int64 id = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string dni = 4;
+  string email = 5;
+  bool activo = 6;
+}
+
+message ClientesResponse {
+  repeated ClienteResponse clientes = 1;
+}
+
+message ExisteResponse {
+  bool existe = 1;
+}
+
+message ActivoResponse {
+  bool activo = 1;
+}

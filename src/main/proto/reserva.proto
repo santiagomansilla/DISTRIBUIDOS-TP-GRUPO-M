@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc.reserva;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc.reserva";
+
+
+service ReservaGrpcService {
+
+  // Crear una reserva nueva.
+  rpc CrearReserva (CrearReservaRequest) returns (ReservaResponse);
+
+  // Consultar reservas (listado completo).
+  rpc ObtenerReservas (ObtenerReservasRequest) returns (ReservasResponse);
+
+  // Consultar una reserva específica.
+  rpc ObtenerReservaPorId (ReservaIdRequest) returns (ReservaResponse);
+
+  // Cancelar una reserva existente.
+  rpc CancelarReserva (ReservaIdRequest) returns (ReservaResponse);
+
+  // Consultar el historial de reservas de un cliente.
+  rpc ObtenerHistorialPorCliente (ClienteIdRequest) returns (ReservasResponse);
+}
+
+message CrearReservaRequest {
+  int64 clienteId = 1;
+  int64 vehiculoId = 2;
+  string fechaDesde = 3; // formato ISO-8601, ej: "2026-01-15"
+  string fechaHasta = 4;
+}
+
+message ReservaIdRequest {
+  int64 id = 1;
+}
+
+message ClienteIdRequest {
+  int64 clienteId = 1;
+}
+
+message ObtenerReservasRequest {
+  // Sin filtros por ahora.
+}
+
+message ReservaResponse {
+  int64 id = 1;
+  int64 clienteId = 2;
+  int64 vehiculoId = 3;
+  string fechaDesde = 4;
+  string fechaHasta = 5;
+  string estado = 6; // ej: "PENDIENTE", "CONFIRMADA", "CANCELADA", "FINALIZADA"
+}
+
+message ReservasResponse {
+  repeated ReservaResponse reservas = 1;
+}

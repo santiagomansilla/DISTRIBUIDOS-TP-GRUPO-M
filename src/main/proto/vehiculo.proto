@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc.vehiculo;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc.vehiculo";
+
+
+service VehiculoGrpcService {
+
+  // Consultar vehículos (listado completo).
+  rpc ObtenerVehiculos (ObtenerVehiculosRequest) returns (VehiculosResponse);
+
+  // Consultar un vehículo específico.
+  rpc ObtenerVehiculoPorId (VehiculoIdRequest) returns (VehiculoResponse);
+
+  // Consultar disponibilidad en un rango de fechas
+  rpc ConsultarDisponibilidad (DisponibilidadRequest) returns (VehiculosResponse);
+
+  // Actualizar el estado de un vehículo (ej: al reservarlo o devolverlo).
+  rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (VehiculoResponse);
+}
+
+message ObtenerVehiculosRequest {
+  // Sin filtros por ahora. A futuro se pueden agregar (marca, tipo, etc.)
+}
+
+message VehiculoIdRequest {
+  int64 id = 1;
+}
+
+message DisponibilidadRequest {
+  string fechaDesde = 1;   // formato: "2026-01-15"
+  string fechaHasta = 2;
+  string tipoVehiculo = 3; // opcional
+}
+
+message ActualizarEstadoRequest {
+  int64 id = 1;
+  string nuevoEstado = 2;  // ej: "DISPONIBLE", "RESERVADO", "EN_MANTENIMIENTO"
+}
+
+message VehiculoResponse {
+  int64 id = 1;
+  string marca = 2;
+  string modelo = 3;
+  string tipoVehiculo = 4;
+  string estado = 5;
+  double precioPorDia = 6;
+}
+
+message VehiculosResponse {
+  repeated VehiculoResponse vehiculos = 1;
+}
