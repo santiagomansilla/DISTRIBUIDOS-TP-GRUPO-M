@@ -105,4 +105,11 @@ public class VehiculoService {
                 .filter(v -> precioMax == null || (v.getPrecioDiario() != null && v.getPrecioDiario().compareTo(precioMax) <= 0))
                 .toList();
     }
+
+    public Vehiculo actualizarEstado(Long id, EstadoVehiculo nuevoEstado) {
+        Vehiculo vehiculo = vehiculoRepository.findByIdAndActivoTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vehículo no encontrado con ID: " + id));
+        vehiculo.setEstado(nuevoEstado);
+        return vehiculoRepository.save(vehiculo);
+    }
 }

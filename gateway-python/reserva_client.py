@@ -8,8 +8,9 @@ import reserva_pb2
 import reserva_pb2_grpc
 from schemas import ReservaOut
 
-# puerto a configurar
-RESERVA_SERVICE_ADDRESS = "localhost:9093"
+# puerto a configurar (por defecto 9090 donde corre Spring Boot con los servicios gRPC)
+RESERVA_SERVICE_ADDRESS = os.getenv("RESERVA_SERVICE_ADDRESS", "localhost:9090")
+
 
 
 def _to_out(r) -> ReservaOut:

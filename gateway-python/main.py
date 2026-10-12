@@ -14,11 +14,22 @@ from schemas import (
     ReservaCreate, ReservaOut
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Rentar - API Gateway",
     description="Punto de entrada único al sistema. Habla con los servicios internos por gRPC.",
     version="1.0.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 # Traduce errores de gRPC (vienen del servicio interno) a códigos HTTP entendibles

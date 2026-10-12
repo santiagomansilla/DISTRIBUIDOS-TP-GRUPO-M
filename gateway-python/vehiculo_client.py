@@ -8,8 +8,9 @@ import vehiculo_pb2
 import vehiculo_pb2_grpc
 from schemas import VehiculoCreate, VehiculoUpdate, VehiculoOut
 
-# puerto a configurar
-VEHICULO_SERVICE_ADDRESS = "localhost:9091"
+# puerto a configurar (por defecto 9090 donde corre Spring Boot con los servicios gRPC)
+VEHICULO_SERVICE_ADDRESS = os.getenv("VEHICULO_SERVICE_ADDRESS", "localhost:9090")
+
 
 
 def _to_out(r) -> VehiculoOut:
