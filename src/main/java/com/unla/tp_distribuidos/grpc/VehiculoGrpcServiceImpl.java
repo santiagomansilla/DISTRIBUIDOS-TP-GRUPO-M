@@ -6,6 +6,7 @@ import com.unla.tp_distribuidos.model.EstadoVehiculo;
 import com.unla.tp_distribuidos.model.TipoVehiculo;
 import com.unla.tp_distribuidos.model.Vehiculo;
 import com.unla.tp_distribuidos.service.VehiculoService;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 
@@ -14,8 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Vehicle Service — gRPC (Hito 2).
- * Responsable de operaciones relacionadas con los vehículos.
+ * Vehicle Service — Adaptador gRPC (Hito 2 y 3).
+ * Traduce las peticiones binarias del API Gateway y delega a la capa de dominio.
  */
 @GrpcService
 public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrpcServiceImplBase {
@@ -26,28 +27,66 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
         this.vehiculoService = vehiculoService;
     }
 
+    /**
+     * Alta de flota propia (Administrador).
+     */
     @Override
     public void crearVehiculo(CrearVehiculoRequest request, StreamObserver<VehiculoResponse> responseObserver) {
         try {
             VehiculoDTO dto = new VehiculoDTO();
-            dto.setPatente(request.getPatente());
+            dto.setPatente(request.getPatente() != null ? request.getPatente().trim().toUpperCase() : "");
             dto.setMarca(request.getMarca());
             dto.setModelo(request.getModelo());
             dto.setAnio(request.getAnio());
             dto.setColor(request.getColor());
-            if (!request.getTipo().isBlank()) {
-                dto.setTipo(TipoVehiculo.valueOf(request.getTipo().toUpperCase()));
+
+            if (request.getTipo() != null && !request.getTipo().isBlank()) {
+                dto.setTipo(TipoVehiculo.valueOf(request.getTipo().trim().toUpperCase()));
             }
             dto.setPrecioDiario(BigDecimal.valueOf(request.getPrecioDiario()));
-            if (!request.getEstado().isBlank()) {
-                dto.setEstado(EstadoVehiculo.valueOf(request.getEstado().toUpperCase()));
-            }
+            dto.setEstado(EstadoVehiculo.DISPONIBLE);
 
+            // Delega la persistencia y la publicación a RabbitMQ al service
             Vehiculo creado = vehiculoService.crearVehiculo(dto);
+
             responseObserver.onNext(mapear(creado));
             responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.INTERNAL.withDescription("Error al crear vehículo propio: " + e.getMessage()).asRuntimeException());
+        }
+    }
+
+    /**
+     * Incorporación asíncrona de vehículo externo (Hito 3: Scatter-Gather).
+     */
+    @Override
+    public void solicitarIncorporacionExterna(SolicitudIncorporacionExternaRequest request, StreamObserver<VehiculoResponse> responseObserver) {
+        try {
+            VehiculoDTO dto = new VehiculoDTO();
+            dto.setPatente(request.getPatente() != null ? request.getPatente().trim().toUpperCase() : "");
+            dto.setMarca(request.getMarca());
+            dto.setModelo(request.getModelo());
+            dto.setAnio(request.getAnio());
+            dto.setColor(request.getColor());
+
+            if (request.getTipo() != null && !request.getTipo().isBlank()) {
+                dto.setTipo(TipoVehiculo.valueOf(request.getTipo().trim().toUpperCase()));
+            }
+            dto.setPrecioDiario(BigDecimal.valueOf(request.getPrecioDiario()));
+
+            // Se persiste inactivo y se disparan las ramas de Policía y DNRPA en paralelo
+            Vehiculo creado = vehiculoService.solicitarIncorporacionExterna(dto, request.getDocumentoCliente());
+
+            responseObserver.onNext(mapear(creado));
+            responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL.withDescription("Error al solicitar incorporación externa: " + e.getMessage()).asRuntimeException());
         }
     }
 
@@ -59,32 +98,36 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
             dto.setModelo(request.getModelo());
             dto.setAnio(request.getAnio());
             dto.setColor(request.getColor());
-            if (!request.getTipo().isBlank()) {
-                dto.setTipo(TipoVehiculo.valueOf(request.getTipo().toUpperCase()));
+
+            if (request.getTipo() != null && !request.getTipo().isBlank()) {
+                dto.setTipo(TipoVehiculo.valueOf(request.getTipo().trim().toUpperCase()));
             }
             dto.setPrecioDiario(BigDecimal.valueOf(request.getPrecioDiario()));
-            if (!request.getEstado().isBlank()) {
-                dto.setEstado(EstadoVehiculo.valueOf(request.getEstado().toUpperCase()));
+
+            if (request.getEstado() != null && !request.getEstado().isBlank()) {
+                dto.setEstado(EstadoVehiculo.valueOf(request.getEstado().trim().toUpperCase()));
             }
 
             Vehiculo modificado = vehiculoService.modificarVehiculo(request.getId(), dto);
             responseObserver.onNext(mapear(modificado));
             responseObserver.onCompleted();
+
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
     @Override
     public void bajaLogicaVehiculo(VehiculoIdRequest request, StreamObserver<VehiculoResponse> responseObserver) {
         try {
-            Vehiculo v = vehiculoService.obtenerPorId(request.getId());
             vehiculoService.bajaLogicaVehiculo(request.getId());
-            v.setActivo(false);
+            Vehiculo v = vehiculoService.obtenerPorId(request.getId());
             responseObserver.onNext(mapear(v));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -95,7 +138,7 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
             responseObserver.onNext(mapear(v));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -110,7 +153,7 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -119,9 +162,10 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
         try {
             LocalDateTime inicio = LocalDateTime.parse(request.getFechaHoraInicio());
             LocalDateTime fin = LocalDateTime.parse(request.getFechaHoraFin());
-            TipoVehiculo tipo = !request.getTipo().isBlank() ? TipoVehiculo.valueOf(request.getTipo().toUpperCase()) : null;
-            String marca = !request.getMarca().isBlank() ? request.getMarca() : null;
-            String modelo = !request.getModelo().isBlank() ? request.getModelo() : null;
+            TipoVehiculo tipo = (request.getTipo() != null && !request.getTipo().isBlank()) 
+                    ? TipoVehiculo.valueOf(request.getTipo().trim().toUpperCase()) : null;
+            String marca = (request.getMarca() != null && !request.getMarca().isBlank()) ? request.getMarca() : null;
+            String modelo = (request.getModelo() != null && !request.getModelo().isBlank()) ? request.getModelo() : null;
             BigDecimal precioMin = request.getPrecioMin() > 0 ? BigDecimal.valueOf(request.getPrecioMin()) : null;
             BigDecimal precioMax = request.getPrecioMax() > 0 ? BigDecimal.valueOf(request.getPrecioMax()) : null;
 
@@ -136,19 +180,19 @@ public class VehiculoGrpcServiceImpl extends VehiculoGrpcServiceGrpc.VehiculoGrp
             responseObserver.onNext(builder.build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
     @Override
     public void actualizarEstadoVehiculo(ActualizarEstadoRequest request, StreamObserver<VehiculoResponse> responseObserver) {
         try {
-            EstadoVehiculo estado = EstadoVehiculo.valueOf(request.getNuevoEstado().toUpperCase());
+            EstadoVehiculo estado = EstadoVehiculo.valueOf(request.getNuevoEstado().trim().toUpperCase());
             Vehiculo actualizado = vehiculoService.actualizarEstado(request.getId(), estado);
             responseObserver.onNext(mapear(actualizado));
             responseObserver.onCompleted();
         } catch (Exception e) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 

@@ -2,16 +2,22 @@ package com.unla.tp_distribuidos.service;
 
 import com.unla.tp_distribuidos.dto.ReservaDTO;
 import com.unla.tp_distribuidos.model.Cliente;
+import com.unla.tp_distribuidos.model.EstadoMantenimiento;
 import com.unla.tp_distribuidos.model.EstadoReserva;
 import com.unla.tp_distribuidos.model.Reserva;
 import com.unla.tp_distribuidos.model.Vehiculo;
 import com.unla.tp_distribuidos.repository.ClienteRepository;
 import com.unla.tp_distribuidos.repository.ReservaRepository;
 import com.unla.tp_distribuidos.repository.VehiculoRepository;
+
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+import com.unla.tp_distribuidos.config.RabbitMQConfig;
+import com.unla.tp_distribuidos.dto.ReservaConfirmadaEvent;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 public class ReservaService {
@@ -19,13 +25,15 @@ public class ReservaService {
     private final ReservaRepository reservaRepository;
     private final ClienteRepository clienteRepository;
     private final VehiculoRepository vehiculoRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public ReservaService(ReservaRepository reservaRepository,
                           ClienteRepository clienteRepository,
-                          VehiculoRepository vehiculoRepository) {
+                          VehiculoRepository vehiculoRepository,RabbitTemplate rabbitTemplate) {
         this.reservaRepository = reservaRepository;
         this.clienteRepository = clienteRepository;
         this.vehiculoRepository = vehiculoRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     public Reserva crearReserva(ReservaDTO dto) {
@@ -62,9 +70,30 @@ public class ReservaService {
         reserva.setPrecioDiario(vehiculo.getPrecioDiario()); // Congela el precio actual
         reserva.setEstado(EstadoReserva.CONFIRMADA);
         reserva.calcularImporteTotal();
+        reserva.setMantenimientoResultado(EstadoMantenimiento.EN_PROCESO);
+        Reserva reservaGuardada= reservaRepository.save(reserva);
+        
 
-        return reservaRepository.save(reserva);
+        ReservaConfirmadaEvent EventoColaRabbit = new ReservaConfirmadaEvent(reservaGuardada.getId(),reservaGuardada.getVehiculo().getId(),reservaGuardada.getFechaHoraInicio(),reservaGuardada.getFechaHoraFin());
+        //ENVIO EVENTO A LA COLA DE RABBIT 
+        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_RESERVA_CONFIRMADA, EventoColaRabbit);
+
+        return reservaGuardada;
     }
+    
+
+    //UPDATE DEL ESTADO DE LA RESERVA AL CONSUMIR EL MANTENIMIENTO DE LA COLA DE RABBIT 
+
+    public void UpdateReservaMantenimiento(Long reservaId, EstadoMantenimiento resultadoMantenimiento){
+
+        Reserva reservaEditada= reservaRepository.findById(reservaId).orElseThrow(() -> new NoSuchElementException("Reserva no encontrada con ID: " + reservaId));
+
+        reservaEditada.setMantenimientoResultado(resultadoMantenimiento);
+        reservaRepository.save(reservaEditada);    
+        System.out.println("✔ [SERVICIO RESERVA] Mantenimiento '" + resultadoMantenimiento 
+                + "' registrado exitosamente para Reserva ID: " + reservaId);
+    }
+
 
     public Reserva cancelarReserva(Long idReserva) {
         Reserva reserva = reservaRepository.findById(idReserva)
