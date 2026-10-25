@@ -61,6 +61,21 @@ class VehiculoOut(BaseModel):
     estado: str
     activo: bool
 
+
+class VehiculoExternoCreate(BaseModel):
+    patente: str
+    marca: str
+    modelo: str
+    anio: int
+    color: Optional[str] = None
+    tipo: Optional[str] = None       
+    precioDiario: float
+    documentoCliente: int
+
+class IncorporacionExternaOut(BaseModel):
+    mensaje: str
+    vehiculo: VehiculoOut
+
 # RESERVAS
 
 class ReservaCreate(BaseModel):

@@ -21,9 +21,22 @@ service VehiculoGrpcService {
   rpc ConsultarDisponibilidad (DisponibilidadRequest) returns (VehiculosResponse);
 
   rpc ActualizarEstadoVehiculo (ActualizarEstadoRequest) returns (VehiculoResponse);
+
+  rpc SolicitarIncorporacionExterna (SolicitudIncorporacionExternaRequest) returns (VehiculoResponse);
 }
 
 message Empty {}
+
+message SolicitudIncorporacionExternaRequest {
+  string patente = 1;
+  string marca = 2;
+  string modelo = 3;
+  int32 anio = 4;
+  string color = 5;
+  string tipo = 6;
+  double precioDiario = 7;
+  int64 documentoCliente = 8;
+}
 
 message CrearVehiculoRequest {
   string patente = 1;

@@ -34,5 +34,7 @@ build/
 
 # Python
 gateway-python/venv/
+gateway-python/.venv/
+.venv/
 __pycache__/
-*.pyc
+*.pyc

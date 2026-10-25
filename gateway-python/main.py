@@ -10,15 +10,26 @@ import vehiculo_client
 import reserva_client
 from schemas import (
     ClienteCreate, ClienteUpdate, ClienteOut,
-    VehiculoCreate, VehiculoUpdate, VehiculoOut,
+    VehiculoCreate, VehiculoUpdate, VehiculoOut, VehiculoExternoCreate,
     ReservaCreate, ReservaOut
 )
+
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Rentar - API Gateway",
     description="Punto de entrada único al sistema. Habla con los servicios internos por gRPC.",
     version="1.0.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 
 # Traduce errores de gRPC (vienen del servicio interno) a códigos HTTP entendibles
@@ -134,7 +145,19 @@ def crear_vehiculo(dto: VehiculoCreate):
     except grpc.RpcError as e:
         grpc_error_to_http(e)
 
+@app.post("/api/v1/vehiculos/externos", response_model=VehiculoOut, status_code=202)
+def solicitar_incorporacion_externa(dto: VehiculoExternoCreate):
+    """
+    Hito 3: Incorporación asíncrona de vehículo externo (Scatter-Gather).
+    Persiste el vehículo inactivo (activo = false) y dispara las validaciones
+    en paralelo hacia Policía y DNRPA vía RabbitMQ.
+    """
+    try:
+        return vehiculo_client.solicitar_incorporacion_externa(dto)
+    except grpc.RpcError as e:
+        grpc_error_to_http(e)
 
+        
 @app.put("/api/v1/vehiculos/{id}", response_model=VehiculoOut)
 def modificar_vehiculo(id: int, dto: VehiculoUpdate):
     try:

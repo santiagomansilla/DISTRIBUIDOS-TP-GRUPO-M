@@ -9,21 +9,23 @@ import cliente_pb2
 import cliente_pb2_grpc
 from schemas import ClienteCreate, ClienteUpdate, ClienteOut
 
-# Dirección del Customer Service (puerto a configurar)
-CLIENTE_SERVICE_ADDRESS = "localhost:9092"
+# Dirección del Customer Service (por defecto 9090 donde corre Spring Boot con los servicios gRPC)
+CLIENTE_SERVICE_ADDRESS = os.getenv("CLIENTE_SERVICE_ADDRESS", "localhost:9090")
+
 
 
 def _to_out(r) -> ClienteOut:
     return ClienteOut(
         id=r.id,
-        documento=r.documento,
+        documento=getattr(r, "dni", "") or getattr(r, "documento", ""),
         nombre=r.nombre,
         apellido=r.apellido,
         email=r.email,
-        telefono=r.telefono,
-        fechaNacimiento=r.fechaNacimiento,
+        telefono=getattr(r, "telefono", ""),
+        fechaNacimiento=getattr(r, "fechaNacimiento", ""),
         activo=r.activo,
     )
+
 
 
 def crear(dto: ClienteCreate) -> ClienteOut:

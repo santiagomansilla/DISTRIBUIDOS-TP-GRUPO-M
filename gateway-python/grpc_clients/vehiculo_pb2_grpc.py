@@ -69,6 +69,11 @@ class VehiculoGrpcServiceStub:
                 request_serializer=vehiculo__pb2.ActualizarEstadoRequest.SerializeToString,
                 response_deserializer=vehiculo__pb2.VehiculoResponse.FromString,
                 _registered_method=True)
+        self.SolicitarIncorporacionExterna = channel.unary_unary(
+                '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/SolicitarIncorporacionExterna',
+                request_serializer=vehiculo__pb2.SolicitudIncorporacionExternaRequest.SerializeToString,
+                response_deserializer=vehiculo__pb2.VehiculoResponse.FromString,
+                _registered_method=True)
 
 
 class VehiculoGrpcServiceServicer:
@@ -116,6 +121,12 @@ class VehiculoGrpcServiceServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SolicitarIncorporacionExterna(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_VehiculoGrpcServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -152,6 +163,11 @@ def add_VehiculoGrpcServiceServicer_to_server(servicer, server):
             'ActualizarEstadoVehiculo': grpc.unary_unary_rpc_method_handler(
                     servicer.ActualizarEstadoVehiculo,
                     request_deserializer=vehiculo__pb2.ActualizarEstadoRequest.FromString,
+                    response_serializer=vehiculo__pb2.VehiculoResponse.SerializeToString,
+            ),
+            'SolicitarIncorporacionExterna': grpc.unary_unary_rpc_method_handler(
+                    servicer.SolicitarIncorporacionExterna,
+                    request_deserializer=vehiculo__pb2.SolicitudIncorporacionExternaRequest.FromString,
                     response_serializer=vehiculo__pb2.VehiculoResponse.SerializeToString,
             ),
     }
@@ -343,6 +359,33 @@ class VehiculoGrpcService:
             target,
             '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/ActualizarEstadoVehiculo',
             vehiculo__pb2.ActualizarEstadoRequest.SerializeToString,
+            vehiculo__pb2.VehiculoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SolicitarIncorporacionExterna(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/SolicitarIncorporacionExterna',
+            vehiculo__pb2.SolicitudIncorporacionExternaRequest.SerializeToString,
             vehiculo__pb2.VehiculoResponse.FromString,
             options,
             channel_credentials,
