@@ -5,7 +5,7 @@ import warnings
 
 import vehiculo_pb2 as vehiculo__pb2
 
-GRPC_GENERATED_VERSION = '1.80.0'
+GRPC_GENERATED_VERSION = '1.84.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class VehiculoGrpcServiceStub(object):
+class VehiculoGrpcServiceStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -69,9 +69,14 @@ class VehiculoGrpcServiceStub(object):
                 request_serializer=vehiculo__pb2.ActualizarEstadoRequest.SerializeToString,
                 response_deserializer=vehiculo__pb2.VehiculoResponse.FromString,
                 _registered_method=True)
+        self.SolicitarIncorporacionExterna = channel.unary_unary(
+                '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/SolicitarIncorporacionExterna',
+                request_serializer=vehiculo__pb2.SolicitudIncorporacionExternaRequest.SerializeToString,
+                response_deserializer=vehiculo__pb2.VehiculoResponse.FromString,
+                _registered_method=True)
 
 
-class VehiculoGrpcServiceServicer(object):
+class VehiculoGrpcServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
     def CrearVehiculo(self, request, context):
@@ -116,6 +121,12 @@ class VehiculoGrpcServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SolicitarIncorporacionExterna(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_VehiculoGrpcServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -154,6 +165,11 @@ def add_VehiculoGrpcServiceServicer_to_server(servicer, server):
                     request_deserializer=vehiculo__pb2.ActualizarEstadoRequest.FromString,
                     response_serializer=vehiculo__pb2.VehiculoResponse.SerializeToString,
             ),
+            'SolicitarIncorporacionExterna': grpc.unary_unary_rpc_method_handler(
+                    servicer.SolicitarIncorporacionExterna,
+                    request_deserializer=vehiculo__pb2.SolicitudIncorporacionExternaRequest.FromString,
+                    response_serializer=vehiculo__pb2.VehiculoResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService', rpc_method_handlers)
@@ -162,7 +178,7 @@ def add_VehiculoGrpcServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class VehiculoGrpcService(object):
+class VehiculoGrpcService:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -343,6 +359,33 @@ class VehiculoGrpcService(object):
             target,
             '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/ActualizarEstadoVehiculo',
             vehiculo__pb2.ActualizarEstadoRequest.SerializeToString,
+            vehiculo__pb2.VehiculoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SolicitarIncorporacionExterna(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/com.unla.tp_distribuidos.grpc.vehiculo.VehiculoGrpcService/SolicitarIncorporacionExterna',
+            vehiculo__pb2.SolicitudIncorporacionExternaRequest.SerializeToString,
             vehiculo__pb2.VehiculoResponse.FromString,
             options,
             channel_credentials,

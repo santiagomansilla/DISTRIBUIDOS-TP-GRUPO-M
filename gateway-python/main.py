@@ -10,7 +10,7 @@ import vehiculo_client
 import reserva_client
 from schemas import (
     ClienteCreate, ClienteUpdate, ClienteOut,
-    VehiculoCreate, VehiculoUpdate, VehiculoOut,
+    VehiculoCreate, VehiculoUpdate, VehiculoOut, VehiculoExternoCreate,
     ReservaCreate, ReservaOut
 )
 
@@ -145,7 +145,19 @@ def crear_vehiculo(dto: VehiculoCreate):
     except grpc.RpcError as e:
         grpc_error_to_http(e)
 
+@app.post("/api/v1/vehiculos/externos", response_model=VehiculoOut, status_code=202)
+def solicitar_incorporacion_externa(dto: VehiculoExternoCreate):
+    """
+    Hito 3: Incorporación asíncrona de vehículo externo (Scatter-Gather).
+    Persiste el vehículo inactivo (activo = false) y dispara las validaciones
+    en paralelo hacia Policía y DNRPA vía RabbitMQ.
+    """
+    try:
+        return vehiculo_client.solicitar_incorporacion_externa(dto)
+    except grpc.RpcError as e:
+        grpc_error_to_http(e)
 
+        
 @app.put("/api/v1/vehiculos/{id}", response_model=VehiculoOut)
 def modificar_vehiculo(id: int, dto: VehiculoUpdate):
     try:

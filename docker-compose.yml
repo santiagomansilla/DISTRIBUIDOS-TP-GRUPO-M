@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rentar-rabbitmq
+    restart: unless-stopped
+    ports:
+      # Puerto para el protocolo AMQP (donde se conectan Java y Python)
+      - "5672:5672"
+      # Puerto de la interfaz gráfica de administración web
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest

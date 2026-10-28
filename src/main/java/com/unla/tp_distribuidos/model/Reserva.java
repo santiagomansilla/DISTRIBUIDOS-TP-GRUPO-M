@@ -29,7 +29,9 @@ public class Reserva {
     private LocalDateTime fechaHoraFin;
     private BigDecimal precioDiario;
     private BigDecimal importeTotal;
-
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_mantenimiento")
+    private EstadoMantenimiento mantenimientoResultado;
     @Enumerated(EnumType.STRING)
     private EstadoReserva estado;
 
@@ -86,4 +88,7 @@ public class Reserva {
 
     public EstadoReserva getEstado() { return estado; }
     public void setEstado(EstadoReserva estado) { this.estado = estado; }
+
+    public EstadoMantenimiento getMantenimientoResultado() {return mantenimientoResultado;}
+    public void setMantenimientoResultado(EstadoMantenimiento mantenimientoResultado) { this.mantenimientoResultado = mantenimientoResultado;}
 }
