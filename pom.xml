@@ -39,7 +39,11 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
-
+        <!--Security-->
+        <dependency>
+             <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
         <!-- JPA & Persistencia -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -138,28 +142,25 @@
         <plugins>
             <!-- Protobuf / gRPC Plugin corregido para Windows -->
             <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.6.1</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:3.25.5:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.68.1:exe:${os.detected.classifier}</pluginArtifact>
-                    <!-- Evita conflictos de bloqueo y limpieza en Windows -->
-                    <clearOutputDirectory>false</clearOutputDirectory>
-                    <includeDependenciesInCompilations>false</includeDependenciesInCompilations>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>compile-protoc</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+    <groupId>org.xolstice.maven.plugins</groupId>
+    <artifactId>protobuf-maven-plugin</artifactId>
+    <version>0.6.1</version>
+    <configuration>
+        <protocArtifact>com.google.protobuf:protoc:3.25.1:exe:${os.detected.classifier}</protocArtifact>
+        <pluginId>grpc-java</pluginId>
+        <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.62.2:exe:${os.detected.classifier}</pluginArtifact>
+        <protoSourceRoot>${project.basedir}/src/main/proto</protoSourceRoot>
+        <clearOutputDirectory>false</clearOutputDirectory>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>compile</goal>
+                <goal>compile-custom</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
 
             <!-- Agregar carpetas generadas al Classpath -->
             <plugin>

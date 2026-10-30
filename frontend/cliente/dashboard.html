@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rentar - Portal Cliente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <nav id="sidebar">
+        <div class="brand">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                        <rect width="48" height="48" rx="8" fill="#112238"/>
+                        <path d="M10 32C10 32 12.5 24 16 22C18 20.8 21.5 17 25 17H34C37 17 39.5 21 40.5 24.5L42 29C42.5 30.5 41.5 32 40 32H10Z" fill="#3b82f6"/>
+                        <circle cx="16.5" cy="32.5" r="4.5" fill="#0b1626" stroke="#93c5fd" stroke-width="2"/>
+                        <circle cx="34.5" cy="32.5" r="4.5" fill="#0b1626" stroke="#93c5fd" stroke-width="2"/>
+                    </svg>
+                    <span>Rentar</span>
+                </div>
+                <a href="../index.html" class="btn btn-sm btn-outline-light py-0 px-2" title="Cerrar sesión">
+                    <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
+                </a>
+            </div>
+            <div class="badge bg-info text-dark text-uppercase mt-3 w-100 py-2">
+                Portal Cliente
+            </div>
+        </div>
+
+        <ul class="nav nav-pills flex-column" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active w-100" id="tab-disp-btn" data-bs-toggle="pill" data-bs-target="#tab-disponibilidad" type="button">
+                    <i data-lucide="search" style="width: 18px; height: 18px;"></i> Disponibilidad
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link w-100" id="tab-res-btn" data-bs-toggle="pill" data-bs-target="#tab-reserva" type="button">
+                    <i data-lucide="calendar-plus" style="width: 18px; height: 18px;"></i> Nueva Reserva
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link w-100" id="tab-hist-btn" data-bs-toggle="pill" data-bs-target="#tab-historial" type="button">
+                    <i data-lucide="history" style="width: 18px; height: 18px;"></i> Mis Alquileres
+                </button>
+            </li>
+        </ul>
+
+        <div class="mt-auto small text-secondary pt-3 border-top border-secondary">
+            <div class="d-flex justify-content-between mb-1"><span>Gateway:</span> <strong class="text-white">:8000</strong></div>
+            <div class="d-flex justify-content-between"><span>Spring Boot:</span> <strong class="text-white">:9090</strong></div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <div class="header-box">
+            <div>
+                <h4 class="mb-0 text-white">Alquiler de Vehículos</h4>
+                <small class="text-secondary">Consulta de disponibilidad, reservas y seguimiento de operaciones</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="../index.html" class="btn btn-sm btn-outline-light">
+                    <i data-lucide="home" style="width: 15px; height: 15px;" class="me-1"></i> Portada
+                </a>
+                <span class="badge bg-success p-2 d-flex align-items-center gap-1">
+                    <i data-lucide="activity" style="width: 14px; height: 14px;"></i> Conectado
+                </span>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <!-- TAB DISPONIBILIDAD (GRAPHQL)[cite: 7, 8] -->
+            <div class="tab-pane fade show active" id="tab-disponibilidad" role="tabpanel">
+                <div class="card p-4">
+                    <h5 class="card-title mb-3 d-flex align-items-center gap-2">
+                        <i data-lucide="search" class="text-info" style="width: 20px; height: 20px;"></i>
+                        Consulta de Disponibilidad de Flota (Requerimiento 2 - GraphQL)[cite: 7]
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha y Hora Inicio *</label>
+                            <input type="datetime-local" class="form-control" id="disp-inicio">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha y Hora Fin *</label>
+                            <input type="datetime-local" class="form-control" id="disp-fin">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tipo de Vehículo</label>
+                            <select class="form-select" id="disp-tipo">
+                                <option value="">Todos</option>
+                                <option value="SEDAN">SEDAN</option>
+                                <option value="SUV">SUV</option>
+                                <option value="PICKUP">PICKUP</option>
+                                <option value="COUPE">COUPE</option>
+                                <option value="HATCHBACK">HATCHBACK</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Marca</label>
+                            <input type="text" class="form-control" id="disp-marca" placeholder="Toyota">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="disp-modelo" placeholder="Corolla">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Precio Diario Mínimo ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="disp-precio-min">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Precio Diario Máximo ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="disp-precio-max">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                            <button class="btn btn-primary px-4 d-inline-flex align-items-center gap-2" onclick="consultarDisponibilidad()">
+                                <i data-lucide="filter" style="width: 16px; height: 16px;"></i> Consultar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <h5>Vehículos Disponibles</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th><th>Patente</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Color</th><th>Tipo</th><th>Precio Diario</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-disponibles">
+                                <tr><td colspan="9" class="text-center text-secondary">Defina fecha de inicio y finalización para listar unidades.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB RESERVA (REST)[cite: 9] -->
+            <div class="tab-pane fade" id="tab-reserva" role="tabpanel">
+                <div class="card p-4">
+                    <h5 class="card-title mb-3 d-flex align-items-center gap-2">
+                        <i data-lucide="calendar-check" class="text-success" style="width: 20px; height: 20px;"></i>
+                        Registrar Reserva (Requerimiento 4 - REST)[cite: 9]
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">ID de Cliente *</label>
+                            <input type="number" class="form-control" id="res-cliente-id" placeholder="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ID de Vehículo *</label>
+                            <input type="number" class="form-control" id="res-vehiculo-id" placeholder="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha y Hora Inicio *</label>
+                            <input type="datetime-local" class="form-control" id="res-inicio">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha y Hora Fin *</label>
+                            <input type="datetime-local" class="form-control" id="res-fin">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button class="btn btn-success px-4" onclick="crearReserva()">Confirmar Reserva</button>
+                        </div>
+                    </div>
+                    <div id="res-resultado" class="mt-3"></div>
+                </div>
+            </div>
+
+            <!-- TAB HISTORIAL (GRAPHQL & CANCELACIÓN)[cite: 10] -->
+            <div class="tab-pane fade" id="tab-historial" role="tabpanel">
+                <div class="card p-4">
+                    <h5 class="card-title mb-3 d-flex align-items-center gap-2">
+                        <i data-lucide="history" class="text-info" style="width: 20px; height: 20px;"></i>
+                        Historial de Alquileres (Requerimiento 7 - GraphQL)[cite: 10]
+                    </h5>
+                    <div class="row g-3 align-items-end mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">ID del Cliente *</label>
+                            <input type="number" class="form-control" id="hist-cliente-id">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="consultarHistorial()">Consultar Historial</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr><th>ID Reserva</th><th>Vehículo</th><th>Patente</th><th>Inicio</th><th>Fin</th><th>Días</th><th>Total</th><th>Estado</th></tr>
+                            </thead>
+                            <tbody id="tabla-historial">
+                                <tr><td colspan="8" class="text-center text-secondary">Ingrese ID de cliente para visualizar alquileres.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr class="my-4" style="border-color: var(--brand-border);">
+                    <h6 class="mb-3 text-danger d-flex align-items-center gap-2">
+                        <i data-lucide="alert-octagon" style="width: 18px; height: 18px;"></i> Cancelación de Reserva (Requerimiento 6 - REST)[cite: 10]
+                    </h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">ID de Reserva a Cancelar</label>
+                            <input type="number" class="form-control" id="cancelar-reserva-id">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-danger w-100" onclick="cancelarReserva()">Cancelar Reserva</button>
+                        </div>
+                    </div>
+                    <div id="cancelar-resultado" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/cliente.js"></script>
+</body>
+</html>

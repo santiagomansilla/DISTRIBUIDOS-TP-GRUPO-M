@@ -3,11 +3,13 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 from strawberry.fastapi import GraphQLRouter
 from graphql_schema import schema
+from pydantic import BaseModel
 import grpc
 
 import cliente_client
 import vehiculo_client
 import reserva_client
+import auth_client
 from schemas import (
     ClienteCreate, ClienteUpdate, ClienteOut,
     VehiculoCreate, VehiculoUpdate, VehiculoOut, VehiculoExternoCreate,
@@ -30,7 +32,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class LoginDTO(BaseModel):
+    username: str
+    password: str
 
+
+@app.post("/api/auth/login", tags=["Autenticación"])
+def login_endpoint(datos: LoginDTO):
+    try:
+        res = auth_client.autenticar_usuario_rpc(datos.username, datos.password)
+        
+        if not res.autenticado:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=res.mensaje
+            )
+
+        return {
+            "username": res.username,
+            "rol": res.rol,
+            "clienteId": res.clienteId if res.clienteId != 0 else None,
+            "token": f"jwt-session-{res.username}"
+        }
+    except grpc.RpcError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Error en comunicación gRPC con Core: {e.details()}"
+        )
 
 # Traduce errores de gRPC (vienen del servicio interno) a códigos HTTP entendibles
 # para la interfaz web
