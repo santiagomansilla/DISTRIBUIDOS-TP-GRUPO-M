@@ -1,20 +1,24 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query, APIRouter, status
 from fastapi.responses import JSONResponse
 from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 from graphql_schema import schema
+from pydantic import BaseModel, EmailStr, Field
+import catalogo_service
+import registro_client
+from typing import Optional
 import grpc
 
 import cliente_client
 import vehiculo_client
 import reserva_client
+import auth_client
 from schemas import (
     ClienteCreate, ClienteUpdate, ClienteOut,
     VehiculoCreate, VehiculoUpdate, VehiculoOut, VehiculoExternoCreate,
     ReservaCreate, ReservaOut
 )
-
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Rentar - API Gateway",
@@ -30,7 +34,77 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# REGISTRO DE USUARIO
 
+class RegistroClienteDTO(BaseModel):
+    documento: str
+    nombre: str
+    username: str
+    apellido: str
+    email: EmailStr
+    telefono: Optional[str] = None
+    fechaNacimiento: Optional[str] = None
+    password: str
+
+#baja logica de vehiculo
+class VehiculoEstadoPatch(BaseModel):
+    activo: Optional[bool] = False
+
+
+# 3. LÍNEA CRUCIAL: Fuerza a Pydantic a resolver y compilar todos los esquemas internos
+RegistroClienteDTO.model_rebuild()
+
+@app.post("/api/v1/auth/register", status_code=status.HTTP_201_CREATED, tags=["Autenticación"])
+def registrar_cliente(dto: RegistroClienteDTO):
+    """Permite el autoregistro de un nuevo cliente respetando las reglas del Requerimiento 3."""
+    try:
+        resultado = registro_client.registrar(dto.model_dump())
+        return resultado
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(ve))
+    except Exception as e:
+        print(f"[ERROR REGISTRO] {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+# LOGIN DE USUARIO
+
+class LoginDTO(BaseModel):
+    username: str
+    password: str
+
+@app.get("/api/v1/vehiculos/marcas", tags=["Catálogo Vehículos"])
+def listar_marcas():
+    """Retorna el listado dinámico de marcas obtenido desde la API externa con caché."""
+    return catalogo_service.obtener_marcas_externas()
+
+@app.get("/api/v1/vehiculos/modelos", tags=["Catálogo Vehículos"])
+def listar_modelos(marca: str = Query(..., min_length=2, description="Nombre de la marca a consultar")):
+    """Retorna los modelos disponibles para una marca seleccionada."""
+    modelos = catalogo_service.obtener_modelos_por_marca_externa(marca)
+    return modelos
+
+@app.post("/api/auth/login", tags=["Autenticación"])
+def login_endpoint(datos: LoginDTO):
+    try:
+        res = auth_client.autenticar_usuario_rpc(datos.username, datos.password)
+        
+        if not res.autenticado:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=res.mensaje
+            )
+
+        return {
+            "username": res.username,
+            "rol": res.rol,
+            "clienteId": res.clienteId if res.clienteId != 0 else None,
+            "token": f"jwt-session-{res.username}"
+        }
+    except grpc.RpcError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Error en comunicación gRPC con Core: {e.details()}"
+        )
 
 # Traduce errores de gRPC (vienen del servicio interno) a códigos HTTP entendibles
 # para la interfaz web
@@ -138,12 +212,14 @@ def validar_cliente(dto: dict):
             }
         grpc_error_to_http(e)
 
+
 @app.post("/api/v1/vehiculos", response_model=VehiculoOut, status_code=201)
 def crear_vehiculo(dto: VehiculoCreate):
     try:
         return vehiculo_client.crear(dto)
     except grpc.RpcError as e:
         grpc_error_to_http(e)
+
 
 @app.post("/api/v1/vehiculos/externos", response_model=VehiculoOut, status_code=202)
 def solicitar_incorporacion_externa(dto: VehiculoExternoCreate):
@@ -157,7 +233,7 @@ def solicitar_incorporacion_externa(dto: VehiculoExternoCreate):
     except grpc.RpcError as e:
         grpc_error_to_http(e)
 
-        
+
 @app.put("/api/v1/vehiculos/{id}", response_model=VehiculoOut)
 def modificar_vehiculo(id: int, dto: VehiculoUpdate):
     try:
@@ -166,11 +242,29 @@ def modificar_vehiculo(id: int, dto: VehiculoUpdate):
         grpc_error_to_http(e)
 
 
-@app.delete("/api/v1/vehiculos/{id}", status_code=204)
-def baja_logica_vehiculo(id: int):
+
+
+
+
+@app.patch(
+    "/api/v1/vehiculos/{id}",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Baja lógica de vehículo (Requerimiento 1)",
+    tags=["Vehículos"]
+)
+def baja_logica_vehiculo(id: int, payload: Optional[VehiculoEstadoPatch] = None):
     try:
-        vehiculo_client.baja_logica(id)
-        return JSONResponse(status_code=204, content=None)
+        nuevo_activo = payload.activo if payload is not None else False
+        
+        # Invocamos el stub gRPC hacia Spring Boot
+        vehiculo_resp = vehiculo_client.baja_logica(id)
+        
+        return {
+            "mensaje": f"Vehículo {id} dado de baja exitosamente",
+            "id": id,
+            "activo": vehiculo_resp.activo
+        }
     except grpc.RpcError as e:
         grpc_error_to_http(e)
 
@@ -189,6 +283,7 @@ def listar_vehiculos():
         return vehiculo_client.listar_activos()
     except grpc.RpcError as e:
         grpc_error_to_http(e)
+
 
 @app.post("/api/v1/reservas", response_model=ReservaOut, status_code=201)
 def crear_reserva(dto: ReservaCreate):
@@ -250,6 +345,7 @@ def cancelar_reserva(id: int):
         return reserva_client.cancelar(id)
     except grpc.RpcError as e:
         grpc_error_to_http(e)
+
 
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")

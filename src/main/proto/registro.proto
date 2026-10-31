@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package com.unla.tp_distribuidos.grpc.registro;
+
+option java_multiple_files = true;
+option java_package = "com.unla.tp_distribuidos.grpc.registro";
+
+service RegistroGrpcService {
+rpc RegistrarCliente(RegistroRequest) returns (RegistroResponse);
+}
+
+message RegistroRequest {
+  string documento = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string email = 4;
+  string telefono = 5;
+  string fechaNacimiento = 6;
+  string password = 7;
+  string username = 8;
+}
+
+message RegistroResponse {
+  int64 usuarioId = 1;
+  string username = 2;
+  string mensaje = 3;
+}

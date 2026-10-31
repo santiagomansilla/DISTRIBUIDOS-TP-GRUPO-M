@@ -2,7 +2,6 @@ package com.unla.tp_distribuidos.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -37,32 +36,7 @@ public class Reserva {
 
     public Reserva() {}
 
-    // Métodos de dominio
-    /**
-     * Calcula el importe total de la reserva según la cantidad de días y el precio diario.
-     */
-    public void calcularImporteTotal() {
-        if (fechaHoraInicio != null && fechaHoraFin != null && precioDiario != null) {
-            long dias = Duration.between(fechaHoraInicio, fechaHoraFin).toDays();
-            if (dias < 1) dias = 1;
-            this.importeTotal = precioDiario.multiply(BigDecimal.valueOf(dias));
-        }
-    }
-
-    public long getCantidadDias() {
-        if (fechaHoraInicio != null && fechaHoraFin != null) {
-            long dias = Duration.between(fechaHoraInicio, fechaHoraFin).toDays();
-            return dias < 1 ? 1 : dias;
-        }
-        return 0;
-    }
-
-    /**
-     * Cancela la reserva y la marca como cancelada.
-     */
-    public void cancelar() {
-        this.estado = EstadoReserva.CANCELADA;
-    }
+    
 
     // Getters y Setters
     public Long getId() { return id; }

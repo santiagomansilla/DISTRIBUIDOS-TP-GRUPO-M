@@ -37,4 +37,7 @@ gateway-python/venv/
 gateway-python/.venv/
 .venv/
 __pycache__/
-*.pyc
+*.pyc
+
+# Scripts de configuración local de entorno
+setup_env.sh

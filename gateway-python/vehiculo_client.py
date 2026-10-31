@@ -80,10 +80,13 @@ def modificar(id: int, dto: VehiculoUpdate) -> VehiculoOut:
         return _to_out(stub.ModificarVehiculo(request))
 
 
-def baja_logica(id: int) -> None:
+def baja_logica(id: int) -> VehiculoOut:
     with grpc.insecure_channel(VEHICULO_SERVICE_ADDRESS) as channel:
         stub = vehiculo_pb2_grpc.VehiculoGrpcServiceStub(channel)
-        stub.BajaLogicaVehiculo(vehiculo_pb2.VehiculoIdRequest(id=id))
+        request = vehiculo_pb2.VehiculoIdRequest(id=id)
+        # Llama al RPC que devuelve VehiculoResponse
+        response = stub.BajaLogicaVehiculo(request)
+        return _to_out(response)
 
 
 def obtener_por_id(id: int) -> VehiculoOut:
