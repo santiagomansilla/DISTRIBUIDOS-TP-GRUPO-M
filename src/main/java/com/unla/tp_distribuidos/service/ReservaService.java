@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import com.unla.tp_distribuidos.config.RabbitMQConfig;
 import com.unla.tp_distribuidos.dto.ReservaConfirmadaEvent;
+import java.time.Duration;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -62,6 +64,10 @@ public class ReservaService {
             throw new IllegalStateException("El vehículo no se encuentra disponible en las fechas solicitadas");
         }
 
+
+        //-----------------------------CALCULO IMPORTE TOTAL DE LA RESERVA---------------------------------
+        BigDecimal importeTotal = calcularImporteTotal(dto.getFechaHoraInicio(), dto.getFechaHoraFin(), vehiculo.getPrecioDiario());
+
         Reserva reserva = new Reserva();
         reserva.setCliente(cliente);
         reserva.setVehiculo(vehiculo);
@@ -69,7 +75,7 @@ public class ReservaService {
         reserva.setFechaHoraFin(dto.getFechaHoraFin());
         reserva.setPrecioDiario(vehiculo.getPrecioDiario()); // Congela el precio actual
         reserva.setEstado(EstadoReserva.CONFIRMADA);
-        reserva.calcularImporteTotal();
+        reserva.setImporteTotal(importeTotal);
         reserva.setMantenimientoResultado(EstadoMantenimiento.EN_PROCESO);
         Reserva reservaGuardada= reservaRepository.save(reserva);
         
@@ -103,15 +109,17 @@ public class ReservaService {
             throw new IllegalStateException("Solo se pueden cancelar reservas cuya fecha de inicio sea futura");
         }
 
-        reserva.cancelar();
+        reserva.setEstado(EstadoReserva.CANCELADA);
         return reservaRepository.save(reserva);
     }
 
     public List<Reserva> consultarHistorial(Long clienteId) {
-        return reservaRepository.findByClienteId(clienteId).stream()
-                .filter(r -> r.getEstado() == EstadoReserva.FINALIZADA || r.getEstado() == EstadoReserva.CANCELADA)
-                .toList();
+    if (clienteId == null || clienteId <= 0) {
+        throw new IllegalArgumentException("El clienteId es obligatorio y debe ser válido");
     }
+    // Trae todas las reservas del cliente para que pueda auditar sus alquileres y cancelar las vigentes
+    return reservaRepository.findByClienteId(clienteId);
+}
 
     public List<Reserva> consultarReservas(Long clienteId, Long vehiculoId,
                                            com.unla.tp_distribuidos.model.TipoVehiculo tipoVehiculo,
@@ -138,4 +146,28 @@ public class ReservaService {
                 .filter(r -> fechaHasta == null || !r.getFechaHoraFin().isAfter(fechaHasta))
                 .toList();
     }
+
+
+
+//-------------------------------calcular cantidad de dias
+public long calcularCantidadDias(LocalDateTime inicio, LocalDateTime fin) {
+        if (inicio == null || fin == null) {
+            return 0;
+        }
+        Duration duracion = Duration.between(inicio, fin);
+        long horas = duracion.toHours();
+        
+        // Redondeo de días hacia arriba: horas / 24 redondeado hacia el entero superior
+        long dias = (long) Math.ceil((double) horas / 24.0);
+        return Math.max(dias, 1L);
+    }
+//-------------------------------calcular importe total
+public BigDecimal calcularImporteTotal(LocalDateTime inicio, LocalDateTime fin, BigDecimal precioDiario) {
+        if (precioDiario == null || inicio == null || fin == null) {
+            return BigDecimal.ZERO;
+        }
+        long dias = calcularCantidadDias(inicio, fin);
+        return precioDiario.multiply(BigDecimal.valueOf(dias));
+    }
+
 }

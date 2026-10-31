@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rentar - Portal Administrador</title>
+    <!-- Estilos de Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/main.css">
+    <!-- Iconos Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
+    <!-- Sidebar de Navegación -->
     <nav id="sidebar">
         <div class="brand">
             <div class="d-flex align-items-center justify-content-between">
@@ -26,7 +29,7 @@
                     <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
                 </a>
             </div>
-            <!-- Badge verde solicitado para Admin -->
+            <!-- Identificador de Rol Administrador -->
             <div class="badge bg-success text-uppercase mt-3 w-100 py-2">
                 Panel Administrador
             </div>
@@ -43,6 +46,13 @@
                     <i data-lucide="users" style="width: 18px; height: 18px;"></i> Gestión de Clientes
                 </button>
             </li>
+
+            <li class="nav-item">
+    <button class="nav-link w-100" id="tab-reservas-btn" data-bs-toggle="pill" data-bs-target="#tab-admin-reservas" type="button" onclick="cargarReservasAdmin()">
+        <i data-lucide="calendar-check" style="width: 18px; height: 18px;"></i> Auditoría de Reservas
+    </button>
+</li>
+
         </ul>
 
         <div class="mt-auto small text-secondary pt-3 border-top border-secondary">
@@ -51,6 +61,7 @@
         </div>
     </nav>
 
+    <!-- Contenido Principal -->
     <main id="main-content">
         <div class="header-box">
             <div>
@@ -68,13 +79,13 @@
         </div>
 
         <div class="tab-content">
-            <!-- TAB ABM VEHICULOS[cite: 6, 7] -->
+            <!-- TAB 1: REQUERIMIENTO 1 - ABM DE VEHICULOS (REST) -->
             <div class="tab-pane fade show active" id="tab-admin-flota" role="tabpanel">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="card-title mb-0 d-flex align-items-center gap-2">
                             <i data-lucide="plus-circle" class="text-primary" style="width: 20px; height: 20px;"></i>
-                            Alta y Edición de Vehículo (Requerimiento 1 - REST)[cite: 6]
+                            Alta y Edición de Vehículo (Requerimiento 1 - REST)
                         </h5>
                         <button class="btn btn-sm btn-outline-secondary d-none" id="btn-cancelar-edicion-v" onclick="cancelarEdicionVehiculo()">
                             Cancelar Edición
@@ -84,28 +95,45 @@
                     <form id="form-vehiculo" onsubmit="guardarVehiculo(event)">
                         <input type="hidden" id="v-id">
                         <div class="row g-3">
+                            <!-- Fila 1: Patente, Marca y Modelo -->
                             <div class="col-md-4">
-                                <label class="form-label">Patente *</label>
-                                <input type="text" class="form-control" id="v-patente" required>
-                            </div>
+    <label class="form-label">Patente (Única e Inmutable) *</label>
+    <input 
+        type="text" 
+        class="form-control text-uppercase" 
+        id="v-patente" 
+        placeholder="Ej: AA123BB o ABC123" 
+        pattern="^([A-Za-z]{3}[0-9]{3}|[A-Za-z]{2}[0-9]{3}[A-Za-z]{2})$"
+        title="Formato inválido. Debe ser Mercosur (AA123BB) o tradicional (ABC123)"
+        maxlength="7"
+        required>
+</div>
                             <div class="col-md-4">
                                 <label class="form-label">Marca *</label>
-                                <input type="text" class="form-control" id="v-marca" required>
+                                <select class="form-select" id="v-marca" required onchange="cargarModelosPorMarca()">
+                                    <option value="" disabled selected>Cargando marcas...</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Modelo *</label>
-                                <input type="text" class="form-control" id="v-modelo" required>
+                                <select class="form-select" id="v-modelo" required disabled>
+                                    <option value="" disabled selected>Primero elija una marca...</option>
+                                </select>
                             </div>
+
+                            <!-- Fila 2: Año, Color, Tipo y Precio Diario -->
                             <div class="col-md-3">
                                 <label class="form-label">Año *</label>
-                                <input type="number" class="form-control" id="v-anio" required>
+                                <select class="form-select" id="v-anio" required>
+                                    <option value="" disabled selected>Seleccione año...</option>
+                                </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Color</label>
-                                <input type="text" class="form-control" id="v-color">
+                                <input type="text" class="form-control" id="v-color" placeholder="Ej: Blanco, Plata, Negro">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Tipo *</label>
+                                <label class="form-label">Tipo de Vehículo *</label>
                                 <select class="form-select" id="v-tipo" required>
                                     <option value="SEDAN">SEDAN</option>
                                     <option value="SUV">SUV</option>
@@ -115,10 +143,12 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Precio Diario ($) *</label>
-                                <input type="number" step="0.01" class="form-control" id="v-precio" required>
+                                <label class="form-label">Precio Diario ($ ARS) *</label>
+                                <input type="number" step="0.01" min="1" class="form-control" id="v-precio" placeholder="0.00" required>
                             </div>
-                            <div class="col-md-3 d-none" id="v-estado-container">
+
+                            <!-- Fila 3: Estado (Visible únicamente durante la edición) -->
+                            <div class="col-md-4 d-none" id="v-estado-container">
                                 <label class="form-label">Estado</label>
                                 <select class="form-select" id="v-estado">
                                     <option value="DISPONIBLE">DISPONIBLE</option>
@@ -126,14 +156,16 @@
                                     <option value="EN ALQUILER">EN ALQUILER</option>
                                 </select>
                             </div>
-                            <div class="col-12 text-end">
+
+                            <div class="col-12 text-end mt-3">
                                 <button type="submit" class="btn btn-success px-4">Guardar Vehículo</button>
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <div class="card p-4">
+                <!-- Tabla de Vehículos Registrados -->
+                <div class="card p-4 mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">Flota Registrada en MariaDB</h5>
                         <button class="btn btn-outline-primary btn-sm" onclick="cargarFlotaVehiculos()">Actualizar Flota</button>
@@ -141,7 +173,18 @@
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle">
                             <thead>
-                                <tr><th>ID</th><th>Patente</th><th>Marca/Modelo</th><th>Año</th><th>Color</th><th>Tipo</th><th>Precio</th><th>Estado</th><th>Activo</th><th>Acciones</th></tr>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patente</th>
+                                    <th>Marca/Modelo</th>
+                                    <th>Año</th>
+                                    <th>Color</th>
+                                    <th>Tipo</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                    <th>Activo</th>
+                                    <th>Acciones</th>
+                                </tr>
                             </thead>
                             <tbody id="tabla-vehiculos-admin"></tbody>
                         </table>
@@ -149,14 +192,14 @@
                 </div>
             </div>
 
-            <!-- TAB ABM CLIENTES & gRPC[cite: 8] -->
+            <!-- TAB 2: REQUERIMIENTO 3 - ABM CLIENTES (REST) & INSPECCIÓN gRPC -->
             <div class="tab-pane fade" id="tab-admin-clientes" role="tabpanel">
                 <div class="card p-4">
-                    <h5 class="card-title mb-3">Alta de Cliente (Requerimiento 3 - REST)[cite: 8]</h5>
+                    <h5 class="card-title mb-3">Alta de Cliente (Requerimiento 3 - REST)</h5>
                     <form id="form-cliente" onsubmit="guardarCliente(event)">
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label">Documento *</label>
+                                <label class="form-label">Documento (DNI Único) *</label>
                                 <input type="text" class="form-control" id="c-doc" required>
                             </div>
                             <div class="col-md-4">
@@ -168,7 +211,7 @@
                                 <input type="text" class="form-control" id="c-apellido" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Email *</label>
+                                <label class="form-label">Email (Único) *</label>
                                 <input type="email" class="form-control" id="c-email" required>
                             </div>
                             <div class="col-md-4">
@@ -186,7 +229,7 @@
                     </form>
                 </div>
 
-                <div class="card p-4">
+                <div class="card p-4 mt-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="mb-0">Inspección de Clientes (gRPC Core :9090)</h5>
                         <span class="badge bg-primary p-2">gRPC Active</span>
@@ -227,16 +270,102 @@
                     <div class="table-responsive mt-4">
                         <table class="table table-sm table-hover align-middle">
                             <thead>
-                                <tr><th>ID</th><th>Documento</th><th>Nombre</th><th>Apellido</th><th>Email</th><th>Estado</th><th>Acción</th></tr>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Documento</th>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
                             </thead>
                             <tbody id="tabla-clientes-grpc"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
+<!-- TAB 3: REQUERIMIENTO 5 - CONSULTA DE RESERVAS (GRAPHQL) -->
+            <div class="tab-pane fade" id="tab-admin-reservas" role="tabpanel">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="card-title mb-0 d-flex align-items-center gap-2">
+                                <i data-lucide="calendar-check" class="text-primary" style="width: 20px; height: 20px;"></i>
+                                Consulta de Reservas (Requerimiento 5 - GraphQL)
+                            </h5>
+                            <small class="text-secondary">Auditoría global de alquileres de todos los clientes mediante GraphQL</small>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="cargarReservasAdmin()">
+                            <i data-lucide="refresh-cw" style="width: 15px; height: 15px;" class="me-1"></i> Actualizar
+                        </button>
+                    </div>
+
+                    <!-- Filtros opcionales exigidos: Cliente, Vehículo, Tipo, Estado, Rango de Fechas -->
+                    <div class="row g-2 mb-3 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">ID Cliente:</label>
+                            <input type="number" id="filtro-reserva-cliente" class="form-control form-control-sm" placeholder="Opcional" min="1" onchange="cargarReservasAdmin()">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">ID Vehículo:</label>
+                            <input type="number" id="filtro-reserva-vehiculo" class="form-control form-control-sm" placeholder="Opcional" min="1" onchange="cargarReservasAdmin()">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">Tipo Vehículo:</label>
+                            <select id="filtro-reserva-tipo" class="form-select form-select-sm" onchange="cargarReservasAdmin()">
+                                <option value="">Todos los Tipos</option>
+                                <option value="SEDAN">SEDAN</option>
+                                <option value="SUV">SUV</option>
+                                <option value="PICKUP">PICKUP</option>
+                                <option value="COUPE">COUPE</option>
+                                <option value="HATCHBACK">HATCHBACK</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">Estado:</label>
+                            <select id="filtro-reserva-estado" class="form-select form-select-sm" onchange="cargarReservasAdmin()">
+                                <option value="">Todos los Estados</option>
+                                <option value="CONFIRMADA">CONFIRMADA</option>
+                                <option value="CANCELADA">CANCELADA</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">Desde:</label>
+                            <input type="date" id="filtro-reserva-desde" class="form-control form-control-sm" onchange="cargarReservasAdmin()">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-secondary">Hasta:</label>
+                            <input type="date" id="filtro-reserva-hasta" class="form-control form-control-sm" onchange="cargarReservasAdmin()">
+                        </div>
+                    </div>
+
+                    <!-- Grilla con las 8 columnas requeridas por el enunciado -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Vehículo</th>
+                                    <th>Patente</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Fecha Fin</th>
+                                    <th>Precio Diario</th>
+                                    <th>Importe Total</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reservas-admin"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
     </main>
 
+    <!-- Scripts de Bootstrap y Lógica Distribuida -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/config.js"></script>
     <script src="../js/admin.js"></script>

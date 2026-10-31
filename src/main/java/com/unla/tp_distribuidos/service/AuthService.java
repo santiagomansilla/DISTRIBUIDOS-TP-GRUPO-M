@@ -1,5 +1,5 @@
 package com.unla.tp_distribuidos.service;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.unla.tp_distribuidos.dto.LoginResponseDTO;
 import com.unla.tp_distribuidos.model.Usuario;
 import com.unla.tp_distribuidos.repository.UsuarioRepository;
@@ -12,7 +12,7 @@ import java.util.Optional;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
-
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     // Inyección explícita por constructor sin Lombok
     public AuthService(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
@@ -32,8 +32,15 @@ public class AuthService {
 
         Usuario usuario = usuarioOpt.get();
 
-        // Verificación de credenciales (comparación directa o via encoder si usás BCrypt)
-        if (!usuario.getPassword().equals(password)) {
+       // Verificación híbrida: BCrypt o texto plano (para compatibilidad con seeds/admin)
+        boolean passwordValida = false;
+        if (usuario.getPassword().startsWith("$2a$") || usuario.getPassword().startsWith("$2b$")) {
+            passwordValida = passwordEncoder.matches(password, usuario.getPassword());
+        } else {
+            passwordValida = usuario.getPassword().equals(password);
+        }
+
+        if (!passwordValida) {
             throw new IllegalArgumentException("Usuario o contraseña incorrectos");
         }
 

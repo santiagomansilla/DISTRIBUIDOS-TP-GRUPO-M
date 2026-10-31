@@ -28,7 +28,11 @@ service ClienteGrpcService {
 
   // Verificar que un cliente se encuentre activo.
   rpc ClienteActivo (ClienteIdRequest) returns (ActivoResponse);
+
 }
+
+
+
 
 message CrearClienteRequest {
   string documento = 1;
